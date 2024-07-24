@@ -9,7 +9,7 @@ TITLE = "title"
 SELECT = "select"
 CHECKBOX = "checkbox"
 MULTI_SELECT = "multi_select"
-
+TZ = "Asia/Shanghai"
 book_properties_type_dict = {
     "标题": TITLE,
     "Description": RICH_TEXT,
@@ -21,7 +21,9 @@ book_properties_type_dict = {
     "时间戳": NUMBER,
     "状态": STATUS,
     "Podcast": RELATION,
-        "喜欢": CHECKBOX,
+    "喜欢": CHECKBOX,
+    "日期": DATE,
+    "收听进度": NUMBER,
 }
 
 TAG_ICON_URL = "https://www.notion.so/icons/hourglass_gray.svg"

@@ -209,7 +209,7 @@ def get_first_and_last_day_of_month(date):
     _, last_day_of_month = calendar.monthrange(date.year, date.month)
     last_day = date.replace(
         day=last_day_of_month, hour=0, minute=0, second=0, microsecond=0
-    )
+    )+ timedelta(days=1)
 
     return first_day, last_day
 
@@ -219,7 +219,7 @@ def get_first_and_last_day_of_year(date):
     first_day = date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
     # 获取给定日期所在年的最后一天
-    last_day = date.replace(month=12, day=31, hour=0, minute=0, second=0, microsecond=0)
+    last_day = date.replace(month=12, day=31, hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
     return first_day, last_day
 
@@ -231,7 +231,7 @@ def get_first_and_last_day_of_week(date):
     )
 
     # 获取给定日期所在周的最后一天（星期日）
-    last_day_of_week = first_day_of_week + timedelta(days=6)
+    last_day_of_week = first_day_of_week + timedelta(days=7)
 
     return first_day_of_week, last_day_of_week
 
@@ -442,3 +442,6 @@ def format_milliseconds(milliseconds):
         return f"{hours:02}:{minutes:02}:{seconds:02}"
     else:
         return f"{minutes:02}:{seconds:02}"
+
+def get_embed(url):
+    return {"type": "embed", "embed": {"url": url}}
