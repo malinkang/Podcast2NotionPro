@@ -14,6 +14,7 @@ from config import (
     movie_properties_type_dict,
     book_properties_type_dict,
     TAG_ICON_URL,
+    TZ
 )
 from utils import get_icon
 
@@ -229,7 +230,12 @@ def get_monthly_wrapped(year, month, id):
 
 
 def get_month_from_notion():
-    filter = {"property": "收听时长", "number": {"is_empty": True}}
+    filter = {
+        "and": [
+            {"property": "收听时长", "number": {"is_empty": True}},
+            {"property": "日期", "date": {"before": pendulum.now(tz=TZ).replace(day=1).to_date_string()}},
+        ]
+    }
     return notion_helper.query(
         database_id=notion_helper.month_database_id, filter=filter
     )
@@ -268,6 +274,7 @@ def insert_episode(episodes, d):
         episode["链接"] = f"hhttps://www.xiaoyuzhoufm.com/episode/{result.get('eid')}"
         status = "未听"
         if result.get("isFinished"):
+            episode["收听进度"] = result.get("duration")
             status = "听过"
         elif result.get("isPlayed"):
             status = "在听"
@@ -282,19 +289,21 @@ def insert_episode(episodes, d):
         page_id = None
         if eid in notion_episodes:
             old_episode = notion_episodes.get(eid)
+            # 如果是听过将老的日期赋值为老的日期
+            if old_episode.get("状态") == "听过":
+                episode["日期"] = old_episode.get("日期")
             if (
-                old_episode.get("状态") == episode.get("状态")
+                old_episode.get("状态") == "在听"
+                and old_episode.get("状态") == episode.get("状态")
                 and old_episode.get("喜欢") == episode.get("喜欢")
                 and old_episode.get("收听进度") == episode.get("收听进度")
                 and old_episode.get("日期") == episode.get("日期")
-            ):  
+            ):
                 continue
             page_id = old_episode.get("page_id")
         print(
             f"正在同步 = {result.get('title')}，共{len(episodes)}个Episode，当前是第{index+1}个"
         )
-        if status !="听过" or page_id:   
-            episode.pop("日期",None)
         episode["全部"] = [
             notion_helper.get_relation_id(
                 "全部", notion_helper.all_database_id, TAG_ICON_URL

@@ -44,6 +44,7 @@ def get_dir():
     response = requests.post(url, headers=headers)
     if response.status_code == 200:
         data = response.json().get("data")
+
         for i in data:
             results.extend(dir_list(i.get("dir").get("id")))
     else:
@@ -287,7 +288,6 @@ def get_trans_result(transId):
             user_info = json.loads(response_data.get("data").get("tag").get("identify")).get("user_info")
             for key, value in user_info.items():
                 user_dict[key] = value.get("name")
-
         children = []
         for i in json.loads(response_data.get("data").get("result")).get("pg"):
             content = ""
