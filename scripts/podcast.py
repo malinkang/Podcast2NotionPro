@@ -22,7 +22,7 @@ from utils import get_icon
 headers = {
     "host": "api.xiaoyuzhoufm.com",
     "applicationid": "app.podcast.cosmos",
-    "x-jike-refresh-token": os.getenv("REFRESH_TOKEN"),
+    "x-jike-refresh-token": os.getenv("REFRESH_TOKEN").strip(),
     "x-jike-device-id": "5070e349-ba04-4c7b-a32e-13eb0fed01e7",
 }
 
