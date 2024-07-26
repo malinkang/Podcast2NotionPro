@@ -328,7 +328,7 @@ def get_author_avatar(author):
 
 if __name__ == "__main__":
     notion_helper = NotionHelper()
-    headers["cookie"] = os.getenv("COOKIE")
+    headers["cookie"] = os.getenv("COOKIE").strip()
     filter = {
         "and": [
             {"property": "语音转文字状态", "status": {"does_not_equal": "Done"}},
