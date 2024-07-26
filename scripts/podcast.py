@@ -14,7 +14,7 @@ from config import (
     movie_properties_type_dict,
     book_properties_type_dict,
     TAG_ICON_URL,
-    TZ
+    TZ,
 )
 from utils import get_icon
 
@@ -233,7 +233,10 @@ def get_month_from_notion():
     filter = {
         "and": [
             {"property": "收听时长", "number": {"is_empty": True}},
-            {"property": "日期", "date": {"before": pendulum.now(tz=TZ).replace(day=1).to_date_string()}},
+            {
+                "property": "日期",
+                "date": {"before": pendulum.now(tz=TZ).replace(day=1).to_date_string()},
+            },
         ]
     }
     return notion_helper.query(
@@ -293,8 +296,7 @@ def insert_episode(episodes, d):
             if old_episode.get("状态") == "听过":
                 episode["日期"] = old_episode.get("日期")
             if (
-                old_episode.get("状态") == "在听"
-                and old_episode.get("状态") == episode.get("状态")
+                old_episode.get("状态") == episode.get("状态")
                 and old_episode.get("喜欢") == episode.get("喜欢")
                 and old_episode.get("收听进度") == episode.get("收听进度")
                 and old_episode.get("日期") == episode.get("日期")

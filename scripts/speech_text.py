@@ -174,8 +174,8 @@ def get_all_lab_info(transId):
     children = []
     if response.status_code == 200:
         data = response.json().get("data")
-        labInfo = data.get("labCardsMap").get("labInfo")
-        labInfo.extend(data.get("labCardsMap").get("labSummaryInfo"))
+        labInfo = data.get("labCardsMap").get("labSummaryInfo")
+        labInfo.extend(data.get("labCardsMap").get("labInfo"))
         for i in labInfo:
             name = i.get("basicInfo").get("name")
             if name == "qa问答":
@@ -186,8 +186,8 @@ def get_all_lab_info(transId):
                 for contentValue in content.get("contentValues"):
                     if name == "全文摘要":
                         value = contentValue.get("value")
-                        children.insert(5,utils.get_heading(3, "全文摘要"))
-                        children.insert(6,utils.get_callout(value, {"emoji": "💡"}))
+                        children.append(utils.get_heading(3, "全文摘要"))
+                        children.append(utils.get_callout(value, {"emoji": "💡"}))
                     if name == "思维导图":
                         mindmap = contentValue.get("json")
                     if name == "议程":
