@@ -79,8 +79,8 @@ class NotionHelper:
         self.all_database_id = self.get_relation_database_id(
             self.property_dict.get("全部")
         )
-        # if self.day_database_id:
-        #     self.write_database_id(self.day_database_id)
+        if self.day_database_id:
+            self.write_database_id(self.day_database_id)
 
     def get_relation_database_id(self, property):
         return property.get("relation").get("database_id")

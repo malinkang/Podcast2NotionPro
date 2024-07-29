@@ -43,9 +43,15 @@ def get_dir():
     )
     response = requests.post(url, headers=headers)
     if response.status_code == 200:
-        data = response.json().get("data")
-        for i in data:
-            results.extend(dir_list(i.get("dir").get("id")))
+        r = response.json()
+        success = r.get("success")
+        errorMsg = r.get("errorMsg")
+        if success:
+            data = r.get("data")
+            for i in data:
+                results.extend(dir_list(i.get("dir").get("id")))
+        else:
+            print(f"请求失败：{errorMsg}")
     else:
         print("请求失败：", response.status_code)
     return results
@@ -337,10 +343,6 @@ if __name__ == "__main__":
     episodes = notion_helper.query_all_by_filter(
         notion_helper.episode_database_id, filter=filter
     )
-    # episode_dict = {
-    #     utils.get_property_value(x.get("properties").get("标题")): x
-    #     for x in episode_list
-    # }
     results = get_dir()
     results = {
         x.get("recordTitle"):x.get("genRecordId")
