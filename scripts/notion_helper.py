@@ -252,6 +252,8 @@ class NotionHelper:
                 "收听时长": utils.get_property_value(
                     result.get("properties").get("收听时长")
                 ),
+                "rss": utils.get_property_value(result.get("properties").get("rss"))
+                
             }
         return podcast_dict
     

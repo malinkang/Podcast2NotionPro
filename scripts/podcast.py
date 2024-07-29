@@ -147,10 +147,20 @@ def merge_podcast(list1, list2):
     return results
 
 
+def get_rss_urls(pids):
+    result = {}
+    r = requests.post("https://api.malinkang.com/api/xyz/rss", json=pids)
+    if r.ok:
+        result = r.json()
+    return result
+
+
 def insert_podcast():
     list1 = get_mileage()
     list2 = get_podcast()
     results = merge_podcast(list1, list2)
+    pids = [x.get("pid") for x in results]
+    rss = get_rss_urls(pids)
     notion_podcasts = notion_helper.get_all_podcast()
     dict = {}
     for index, result in enumerate(results):
@@ -159,6 +169,7 @@ def insert_podcast():
         podcast["Brief"] = result.get("brief")
         pid = result.get("pid")
         podcast["Pid"] = pid
+        podcast["rss"] = rss.get(result.get("pid"))
         podcast["收听时长"] = result.get("playedSeconds", 0)
         podcast["Description"] = result.get("description")
         podcast["链接"] = f"https://www.xiaoyuzhoufm.com/podcast/{result.get('pid')}"
@@ -176,9 +187,11 @@ def insert_podcast():
             old_podcast = notion_podcasts.get(pid)
             page_id = old_podcast.get("page_id")
             dict[pid] = (page_id, cover)
-            if old_podcast.get("最后更新时间") == podcast.get(
-                "最后更新时间"
-            ) and old_podcast.get("收听时长") == podcast.get("收听时长"):
+            if (
+                old_podcast.get("最后更新时间") == podcast.get("最后更新时间")
+                and old_podcast.get("收听时长") == podcast.get("收听时长")
+                and old_podcast.get("rss") == podcast.get("rss")
+            ):
                 continue
         print(
             f"正在同步 = {result.get('title')}，共{len(results)}个播客，当前是第{index+1}个"

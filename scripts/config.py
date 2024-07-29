@@ -39,4 +39,5 @@ movie_properties_type_dict = {
     "最后更新时间": DATE,
     "链接": URL,
     "收听时长": NUMBER,
+    "rss": URL,
 }
