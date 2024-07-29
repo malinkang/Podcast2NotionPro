@@ -361,7 +361,7 @@ if __name__ == "__main__":
                 .get("properties")
                 .get("播客")
             )
-            transId = results.get(title).get("genRecordId")
+            transId = results.get(title)
             cover = episode.get("cover").get("external").get("url")
             children.append(utils.get_heading(2, "音频"))
             player_url = f"https://notion-music.malinkang.com/player?url={urllib.parse.quote(audio_url)}&name={urllib.parse.quote(title)}&cover={urllib.parse.quote(cover)}&artist={urllib.parse.quote(podcast)}"
