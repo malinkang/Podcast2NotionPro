@@ -149,7 +149,7 @@ def merge_podcast(list1, list2):
 
 def get_rss_urls(pids):
     result = {}
-    r = requests.post("https://api.malinkang.com/api/xyz/rss", json=pids)
+    r = requests.post("https://api.malinkang.com/api/xyz/rss2", json=pids)
     if r.ok:
         result = r.json()
     return result
@@ -159,7 +159,7 @@ def insert_podcast():
     list1 = get_mileage()
     list2 = get_podcast()
     results = merge_podcast(list1, list2)
-    pids = [x.get("pid") for x in results]
+    pids = [{"id":x.get("pid"),"title":x.get("title")} for x in results]
     rss = get_rss_urls(pids)
     notion_podcasts = notion_helper.get_all_podcast()
     dict = {}
@@ -190,7 +190,7 @@ def insert_podcast():
             if (
                 old_podcast.get("最后更新时间") == podcast.get("最后更新时间")
                 and old_podcast.get("收听时长") == podcast.get("收听时长")
-                and old_podcast.get("rss") == podcast.get("rss")
+                and (old_podcast.get("rss") or podcast.get("rss"))
             ):
                 continue
         print(
