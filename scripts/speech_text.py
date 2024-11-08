@@ -329,7 +329,7 @@ def get_trans_result(transId):
             for key, value in user_info.items():
                 user_dict[key] = value.get("name")
         children = []
-        for i in json.loads(response_data.get("data").get("result")).get("pg"):
+        for i in json.loads(response_data.get("data").get("result")).get("pg",[]):
             content = ""
             name = ""
             uid = i.get("ui")
