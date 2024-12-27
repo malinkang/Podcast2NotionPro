@@ -407,7 +407,7 @@ def start(dir_id, files):
 
 def is_match(title, l):
     for i in l:
-        if similarity(title, i) > 0.9:
+        if similarity(title, i) > 0.5:
             return True
 
 
@@ -499,6 +499,12 @@ def get_record(title, records):
         if similarity(title, key) > 0.9:
             return value
 
+def get_rss_urls(pids):
+    result = {}
+    r = requests.post("https://api.malinkang.com/api/xyz/rss", json=pids)
+    if r.ok:
+        result = r.json()
+    return result
 
 if __name__ == "__main__":
     notion_helper = NotionHelper()
@@ -509,20 +515,28 @@ if __name__ == "__main__":
             {"property": "Podcast", "relation": {"is_not_empty": True}},
         ]
     }
+    sorts = [
+        {"property": "日期", "direction": "descending"}
+    ]
     episodes = notion_helper.query_all_by_filter(
-        notion_helper.episode_database_id, filter=f
+        notion_helper.episode_database_id, filter=f, sorts=sorts
     )
     podcasts = {}
+    pids = []
     for episode in episodes:
         episode_properties = episode.get("properties")
         podcast = utils.get_property_value(episode_properties.get("Podcast"))
         podcast_properties = get_podcast(podcast)
         podcast_title = utils.get_property_value(podcast_properties.get("播客"))
-        rss = utils.get_property_value(podcast_properties.get("rss"))
+        pid = utils.get_property_value(podcast_properties.get("Pid"))
         if podcast_title not in podcasts:
-            podcasts[podcast_title] = {"rss": rss, "episodes": []}
+            podcasts[podcast_title] = {"id":pid, "episodes": []}
+            pids.append({"id":pid,"title":podcast_title})
         podcasts[podcast_title].get("episodes").append(episode)
-    print(f"获取播客成功：{len(episodes)}")
+    rss = get_rss_urls(pids)
+    for key,value in podcasts.items():
+        pid = value.get("id")
+        value.update({"rss":rss.get(pid)})
     all_dirs = get_dir()
     for key, value in podcasts.items():
         dir_id = get_dir_id_by_name(key)

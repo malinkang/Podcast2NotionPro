@@ -222,7 +222,7 @@ class NotionHelper:
         return self.client.blocks.delete(block_id=block_id)
 
     @retry(stop_max_attempt_number=3, wait_fixed=5000)
-    def query_all_by_filter(self, database_id, filter):
+    def query_all_by_filter(self, database_id, filter,sorts):
         results = []
         has_more = True
         start_cursor = None
@@ -230,6 +230,7 @@ class NotionHelper:
             response = self.client.databases.query(
                 database_id=database_id,
                 filter=filter,
+                sorts=sorts,
                 start_cursor=start_cursor,
                 page_size=100,
             )
