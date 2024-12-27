@@ -234,15 +234,17 @@ def insert_mindmap(mindmap):
         mindmap_page_id = create_mindmap(title, episode.get("icon"))
         start_time = time.time()
         print(f"开始插入思维导图")
+        with open('mindmap.json', 'w', encoding='utf-8') as f:
+            json.dump(mindmap, f, ensure_ascii=False, indent=4)
         mindmap_root_id = (
             notion_helper.append_blocks(
                 block_id=mindmap_page_id,
-                children=[utils.get_bulleted_list_item(mindmap.get("content"))],
+                children=[utils.get_heading(1,mindmap.get("content"))],
             )
             .get("results")[0]
             .get("id")
         )
-        insert_mindmap_to_notion(mindmap_root_id, mindmap.get("children"))
+        insert_mindmap_to_notion(mindmap_page_id,mindmap_root_id, mindmap.get("children"),2)
         update_mindmap(mindmap_page_id)
         end = time.time()
         print(f"插入思维导图结束 {end-start_time}")
@@ -252,16 +254,16 @@ def insert_mindmap(mindmap):
     return mindmap_page_id
 
 
-def insert_mindmap_to_notion(block_id, children):
+def insert_mindmap_to_notion(page_id,block_id, children,level):
     """将思维导图插入Notion中"""
-    blocks = [utils.get_bulleted_list_item(block.get("content")) for block in children]
-    results = notion_helper.append_blocks(
-        block_id=block_id,
-        children=blocks,
-    ).get("results")
+    blocks = [ utils.get_heading(level,block.get("content")) if(level < 4) else utils.get_bulleted_list_item(block.get("content"))for block in children]
+    if(level < 5):
+        results = notion_helper.append_blocks_after(block_id=page_id,after=block_id,children=blocks).get("results")
+    else:
+        results = notion_helper.append_blocks(block_id=block_id,children=blocks).get("results")
     for index, child in enumerate(children):
         if child.get("children"):
-            insert_mindmap_to_notion(results[index].get("id"), child.get("children"))
+            insert_mindmap_to_notion(page_id,results[index].get("id"), child.get("children"),level+1)
 
 
 def check_mindmap(title):
