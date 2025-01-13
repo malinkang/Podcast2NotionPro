@@ -249,6 +249,8 @@ def get_month_from_notion():
 def update_month_data():
     for result in get_month_from_notion().get("results"):
         title = utils.get_property_value(result.get("properties").get("标题"))
+        if not title:
+            continue
         id = result.get("id")
         year = int(title[0:4])
         month = int(title[5 : title.index("月")])
