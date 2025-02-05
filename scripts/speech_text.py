@@ -498,6 +498,7 @@ def similarity(a, b):
 
 def get_record(title, records):
     for key, value in records.items():
+        print(f"title = {title} key = {key}")
         if similarity(title, key) > 0.9:
             return value
 
