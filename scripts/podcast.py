@@ -399,7 +399,6 @@ def getTongYiUrl(dir_name,title,url):
             files = queryNetSourceParse(task_id,dir_id,title)
             if files:
                 id = start(dir_id,files)
-                contentCheck(id)
                 return f"https://tongyi.aliyun.com/efficiency/doc/transcripts/{id}"
 
 @retry(stop_max_attempt_number=3, wait_fixed=5000)
@@ -424,15 +423,6 @@ def parseNetSourceUrl(url):
         print(f"parse url success {success}")
         if success:
             return data.get("data").get("taskId")
-        
-        
-
-@retry(stop_max_attempt_number=3, wait_fixed=5000)
-def contentCheck(transId):
-    payload ={"action":"getContentCheckStatus","version":"1.0","transId":transId}
-    url = "https://tw-efficiency.biz.aliyun.com/api/contentCheck/request?getContentCheckStatus&c=tongyi-web"
-    response = requests.post(url, headers=tongyi_headers, json=payload)
-    print(response.text)
     
 @retry(stop_max_attempt_number=3, wait_fixed=5000)
 def queryNetSourceParse(task_id, dir_id,title):

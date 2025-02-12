@@ -456,7 +456,7 @@ if __name__ == "__main__":
                             children=children[i * 100 : (i + 1) * 100],
                         )
                     end = time.time()
-                    print(f"插入其他数据结束 {end-start_time}")
+                    print(f"插入其他数据结束，耗时{round(end-start_time)}秒")
                     properties = {"语音转文字状态": {"status": {"name": "Done"}}}
                     if mindmap_page_id:
                         properties["思维导图"] = {"relation": [{"id": mindmap_page_id}]}
