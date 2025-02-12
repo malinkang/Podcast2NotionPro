@@ -57,3 +57,6 @@ jobs:
       - name: udpate heatmap 
         run: |
             python -u scripts/update_heatmap.py
+      - name: speech to text
+        run: |
+          python -u scripts/speech_text.py
