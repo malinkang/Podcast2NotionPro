@@ -458,7 +458,7 @@ def queryNetSourceParse(task_id, dir_id,title):
         elif status == -1:
             time.sleep(1)
             return queryNetSourceParse(
-                task_id=task_id, dir_id=dir_id
+                task_id=task_id, dir_id=dir_id,title=title
             )
         else:
             print(f"query source data = {data}")
