@@ -263,7 +263,7 @@ def get_monthly_wrapped(year, month, id):
 def get_month_from_notion():
     filter = {
         "and": [
-            {"property": "收听时长", "number": {"is_empty": True}},
+            {"property": "收听时长", "number": {"equals": 0}},
             {
                 "property": "日期",
                 "date": {"before": pendulum.now(tz=TZ).replace(day=1).to_date_string()},
