@@ -33,7 +33,7 @@ jobs:
           pip install -r requirements.txt
       - name: podcast sync
         run: |
-          podcast2notion
+          poadcast
       - name: Set default year if not provided
         run: echo "YEAR=$(date +"%Y")" >> $GITHUB_ENV
         if: env.YEAR == ''
