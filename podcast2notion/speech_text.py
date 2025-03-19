@@ -3,8 +3,8 @@ import os
 import time
 from retrying import retry
 import requests
-from notion_helper import NotionHelper
-import utils
+from podcast2notion.notion_helper import NotionHelper
+from podcast2notion import utils
 from dotenv import load_dotenv
 import urllib.parse
 

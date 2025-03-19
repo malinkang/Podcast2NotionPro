@@ -7,7 +7,7 @@ from notion_client import Client
 from retrying import retry
 from datetime import timedelta
 from dotenv import load_dotenv
-import utils
+from podcast2notion import utils
 load_dotenv()
 from podcast2notion.utils import (
     format_date,

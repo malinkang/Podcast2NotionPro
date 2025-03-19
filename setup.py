@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="podcast2notion",
-    version="0.0.4",
+    version="0.0.6",
     packages=find_packages(),
     install_requires=[
         "requests",
@@ -15,7 +15,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "poadcast = podcast2notion.poadcast:main",
+            "podcast = podcast2notion.podcast:main",
             "speech_text = podcast2notion.speech_text:main",
             "update_heatmap = podcast2notion.update_heatmap:main",
         ],
