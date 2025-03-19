@@ -1,4 +1,0 @@
-[console_scripts]
-podcast2notion = podcast2notion.poadcast:main
-speech_text = podcast2notion.speech_text:main
-update_heatmap = podcast2notion.update_heatmap:main

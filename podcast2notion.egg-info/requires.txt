@@ -1,7 +1,0 @@
-requests
-pendulum
-retrying
-notion-client
-github-heatmap
-python-dotenv
-emoji

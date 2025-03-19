@@ -29,4 +29,4 @@ jobs:
           pip install -r requirements.txt
       - name: speech to text
         run: |
-          python -u scripts/speech_text.py
+          speech_text
