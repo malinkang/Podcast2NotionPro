@@ -1,17 +1,12 @@
-import argparse
 import json
 import os
-import re
 import time
-import emoji
-import pendulum
 from retrying import retry
 import requests
 from notion_helper import NotionHelper
 import utils
 from dotenv import load_dotenv
 import urllib.parse
-from difflib import SequenceMatcher
 
 load_dotenv()
 
@@ -220,7 +215,7 @@ def get_all_lab_info(transId):
         print("请求脑图失败：", response.status_code)
 
 
-def insert_mindmap(mindmap):
+def insert_mindmap(mindmap,title,episode,children):
     mindmap_page_id = None
     if mindmap:
         mindmap_page_id = create_mindmap(title, episode.get("icon"))
@@ -378,14 +373,14 @@ def get_podcast(ids):
     return cache.get(podcast_page_id)
 
 
-def get_dir_id_by_name(dir_name):
+def get_dir_id_by_name(dir_name,all_dirs):
     dir = list(filter(lambda x: x.get("dir").get("dirName") == dir_name, all_dirs))
     if dir:
         return dir[0].get("dir").get("id")
 
+notion_helper = NotionHelper()
 
-if __name__ == "__main__":
-    notion_helper = NotionHelper()
+def main():
     headers["cookie"] = os.getenv("COOKIE").strip()
     f = {
         "and": [
@@ -414,9 +409,7 @@ if __name__ == "__main__":
         podcasts[podcast_title].get("episodes").append(episode)
     all_dirs = get_dir()
     for key, value in podcasts.items():
-        dir_id = get_dir_id_by_name(key)
-        need_trans = False
-        trans_list = []
+        dir_id = get_dir_id_by_name(key,all_dirs)
         if dir_id:
             for episode in value.get("episodes"):
                 episode_properties = episode.get("properties")
@@ -437,7 +430,7 @@ if __name__ == "__main__":
                         children.append({"type": "embed", "embed": {"url": player_url}})
                     print(f"开始获取《{title}》的数据")
                     info, mindmap = get_all_lab_info(transId)
-                    mindmap_page_id = insert_mindmap(mindmap)
+                    mindmap_page_id = insert_mindmap(mindmap,title,episode,children)
                     if info:
                         children.extend(info)
                     trans = get_trans_result(transId)
@@ -464,3 +457,6 @@ if __name__ == "__main__":
                         page_id=episode_page_id,
                         properties=properties,
                     )
+
+if __name__ == "__main__":
+    main

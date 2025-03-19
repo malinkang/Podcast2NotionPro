@@ -16,8 +16,7 @@ def get_file():
         print("OUT_FOLDER does not exist.")
         return None
     
-if __name__ == "__main__":
-    notion_helper = NotionHelper()
+def main():
     image_file = get_file()
     if image_file:
         image_url = f"https://raw.githubusercontent.com/{os.getenv('REPOSITORY')}/{os.getenv('REF').split('/')[-1]}/OUT_FOLDER/{image_file}"
@@ -30,3 +29,6 @@ if __name__ == "__main__":
             response = notion_helper.append_blocks(
                 block_id=notion_helper.page_id, children=[get_embed(heatmap_url)]
             )
+notion_helper = NotionHelper()
+if __name__ == "__main__":
+   main()

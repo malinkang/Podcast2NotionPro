@@ -1,0 +1,16 @@
+README.md
+setup.py
+podcast2notion/__init__.py
+podcast2notion/__main__.py
+podcast2notion/config.py
+podcast2notion/notion_helper.py
+podcast2notion/podcast.py
+podcast2notion/speech_text.py
+podcast2notion/update_heatmap.py
+podcast2notion/utils.py
+podcast2notion.egg-info/PKG-INFO
+podcast2notion.egg-info/SOURCES.txt
+podcast2notion.egg-info/dependency_links.txt
+podcast2notion.egg-info/entry_points.txt
+podcast2notion.egg-info/requires.txt
+podcast2notion.egg-info/top_level.txt

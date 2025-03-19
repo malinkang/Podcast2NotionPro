@@ -1,17 +1,15 @@
-import argparse
-import json
 import os
 import time
 import pendulum
 from retrying import retry
 import requests
-from notion_helper import NotionHelper
-import utils
+from podcast2notion.notion_helper import NotionHelper
+from podcast2notion import utils
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from config import (
+from podcast2notion.config import (
     movie_properties_type_dict,
     book_properties_type_dict,
     TAG_ICON_URL,
@@ -171,7 +169,7 @@ def merge_podcast(list1, list2):
 
 
 
-def insert_podcast():
+def insert_podcast(dir_dict):
     list1 = get_mileage()
     list2 = get_podcast()
     results = merge_podcast(list1, list2)
@@ -286,7 +284,7 @@ def update_month_data():
         get_monthly_wrapped(year, month, id)
 
 
-def insert_episode(episodes, d):
+def insert_episode(episodes, d,dir_dict):
     episodes.sort(key=lambda x: x["pubDate"])
     notion_episodes = notion_helper.get_all_episode()
     for index, result in enumerate(episodes):
@@ -344,7 +342,7 @@ def insert_episode(episodes, d):
                 continue
             page_id = old_episode.get("page_id")
         else:
-            episode["通义链接"] =  getTongYiUrl(dir_name,episode.get("标题"),episode.get("音频"))
+            episode["通义链接"] =  getTongYiUrl(dir_dict,dir_name,episode.get("标题"),episode.get("音频"))
         print(
             f"正在同步 = {result.get('title')}，共{len(episodes)}个Episode，当前是第{index+1}个"
         )
@@ -387,7 +385,7 @@ def get_profile():
     if resp.ok:
         return resp.json().get("data").get("uid")
 
-def getTongYiUrl(dir_name,title,url):
+def getTongYiUrl(dir_dict,dir_name,title,url):
     dir_id = dir_dict.get(dir_name)
     if dir_id is None:
         dir_id = create_dir(dir_name)
@@ -501,11 +499,11 @@ def get_dir():
     else:
         print("请求失败：", response.status_code)
 
-if __name__ == "__main__":
-    notion_helper = NotionHelper()
+
+def main():
     refresh_token()
     dir_dict = get_dir()
-    d = insert_podcast()
+    d = insert_podcast(dir_dict)
     episodes = get_history()
     eids = [x.get("eid") for x in episodes]
     progress = get_progress(eids)
@@ -514,5 +512,10 @@ if __name__ == "__main__":
         if episode["eid"] in progress:
             episode["progress"] = progress.get(episode["eid"]).get("progress")
             episode["playedAt"] = progress.get(episode["eid"]).get("playedAt")
-    insert_episode(episodes, d)
+    insert_episode(episodes, d,dir_dict)
     update_month_data()
+
+notion_helper = NotionHelper()
+
+if __name__ == "__main__":
+    main()
