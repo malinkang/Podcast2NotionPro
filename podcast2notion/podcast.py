@@ -1,16 +1,15 @@
-import argparse
-import json
 import os
+import time
 import pendulum
 from retrying import retry
 import requests
-from notion_helper import NotionHelper
-import utils
+from podcast2notion.notion_helper import NotionHelper
+from podcast2notion import utils
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from config import (
+from podcast2notion.config import (
     movie_properties_type_dict,
     book_properties_type_dict,
     TAG_ICON_URL,
@@ -25,6 +24,29 @@ headers = {
     "x-jike-refresh-token": os.getenv("REFRESH_TOKEN").strip(),
     "x-jike-device-id": "5070e349-ba04-4c7b-a32e-13eb0fed01e7",
 }
+
+tongyi_headers = {
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+    "content-type": "application/json",
+    "origin": "https://tongyi.aliyun.com",
+    "priority": "u=1, i",
+    "referer": "https://tongyi.aliyun.com/efficiency/doc/transcripts/g2y8qeaoogbxnbeo?source=2",
+    "sec-ch-ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"macOS"',
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-site",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "x-b3-sampled": "1",
+    "x-b3-spanid": "540e0d18e52cdf0d",
+    "x-b3-traceid": "75a25320c048cde87ea3b710a65d196b",
+    "x-tw-canary": "",
+    "cookie": os.getenv("COOKIE").strip(),
+    "x-tw-from": "tongyi",
+}
+
 
 
 @retry(stop_max_attempt_number=3, wait_fixed=5000)
@@ -57,7 +79,6 @@ def get_podcast():
             refresh_token()
             raise Exception(f"Error {data} {resp.text}")
     return results
-
 
 @retry(stop_max_attempt_number=3, wait_fixed=5000)
 def get_mileage(rank="TOTAL"):
@@ -147,29 +168,25 @@ def merge_podcast(list1, list2):
     return results
 
 
-def get_rss_urls(pids):
-    result = {}
-    r = requests.post("https://api.malinkang.com/api/xyz/rss2", json=pids)
-    if r.ok:
-        result = r.json()
-    return result
 
-
-def insert_podcast():
+def insert_podcast(dir_dict):
     list1 = get_mileage()
     list2 = get_podcast()
     results = merge_podcast(list1, list2)
-    pids = [{"id":x.get("pid"),"title":x.get("title")} for x in results]
-    rss = get_rss_urls(pids)
     notion_podcasts = notion_helper.get_all_podcast()
     dict = {}
     for index, result in enumerate(results):
         podcast = {}
-        podcast["播客"] = result.get("title")
+        title =result.get("title")
+        dir_id = dir_dict.get(title)
+        if dir_id is None:
+            dir_id = create_dir(title)
+            dir_dict[title] = dir_id
+        podcast["播客"] = title
+        podcast["通义链接"] = f"https://tongyi.aliyun.com/efficiency/folders/{dir_id}"
         podcast["Brief"] = result.get("brief")
         pid = result.get("pid")
         podcast["Pid"] = pid
-        podcast["rss"] = rss.get(result.get("pid"))
         podcast["收听时长"] = result.get("playedSeconds", 0)
         podcast["Description"] = result.get("description")
         podcast["链接"] = f"https://www.xiaoyuzhoufm.com/podcast/{result.get('pid')}"
@@ -181,16 +198,15 @@ def insert_podcast():
                 .int_timestamp
             )
         cover = result.get("image").get("picUrl")
-
         page_id = None
         if pid in notion_podcasts:
             old_podcast = notion_podcasts.get(pid)
             page_id = old_podcast.get("page_id")
-            dict[pid] = (page_id, cover)
+            dict[pid] = (page_id, cover,title)
             if (
                 old_podcast.get("最后更新时间") == podcast.get("最后更新时间")
                 and old_podcast.get("收听时长") == podcast.get("收听时长")
-                and (old_podcast.get("rss") or podcast.get("rss"))
+                and old_podcast.get("通义链接") == podcast.get("通义链接")
             ):
                 continue
         print(
@@ -220,7 +236,7 @@ def insert_podcast():
             page_id = notion_helper.create_page(
                 parent=parent, properties=properties, icon=get_icon(cover)
             ).get("id")
-        dict[pid] = (page_id, cover)
+        dict[pid] = (page_id, cover,title)
     return dict
 
 
@@ -245,7 +261,7 @@ def get_monthly_wrapped(year, month, id):
 def get_month_from_notion():
     filter = {
         "and": [
-            {"property": "收听时长", "number": {"is_empty": True}},
+            {"property": "收听时长", "number": {"equals": 0}},
             {
                 "property": "日期",
                 "date": {"before": pendulum.now(tz=TZ).replace(day=1).to_date_string()},
@@ -260,17 +276,18 @@ def get_month_from_notion():
 def update_month_data():
     for result in get_month_from_notion().get("results"):
         title = utils.get_property_value(result.get("properties").get("标题"))
+        if not title:
+            continue
         id = result.get("id")
         year = int(title[0:4])
         month = int(title[5 : title.index("月")])
         get_monthly_wrapped(year, month, id)
 
 
-def insert_episode(episodes, d):
+def insert_episode(episodes, d,dir_dict):
     episodes.sort(key=lambda x: x["pubDate"])
     notion_episodes = notion_helper.get_all_episode()
     for index, result in enumerate(episodes):
-
         pid = result.get("pid")
         if pid not in d:
             continue
@@ -302,20 +319,30 @@ def insert_episode(episodes, d):
                 .in_tz("UTC")
                 .int_timestamp
             )
+        dir_name = d.get(pid)[2]
         page_id = None
         if eid in notion_episodes:
             old_episode = notion_episodes.get(eid)
             # 如果是听过将老的日期赋值为老的日期
             if old_episode.get("状态") == "听过":
                 episode["日期"] = old_episode.get("日期")
+            # 如果语音转文字状态不为Done，并且通义链接为空，则提交转写
+            if old_episode.get("语音转文字状态")!= "Done" and old_episode.get("通义链接") is None:
+                episode["通义链接"] = getTongYiUrl(dir_name,episode.get("标题"),episode.get("音频"))
+            # 如果通义链接不为空，则赋值
+            elif old_episode.get("通义链接") is not None:
+                episode["通义链接"] = old_episode.get("通义链接")
             if (
                 old_episode.get("状态") == episode.get("状态")
                 and old_episode.get("喜欢") == episode.get("喜欢")
                 and old_episode.get("收听进度") == episode.get("收听进度")
                 and old_episode.get("日期") == episode.get("日期")
+                and old_episode.get("通义链接") == episode.get("通义链接")
             ):
                 continue
             page_id = old_episode.get("page_id")
+        else:
+            episode["通义链接"] =  getTongYiUrl(dir_dict,dir_name,episode.get("标题"),episode.get("音频"))
         print(
             f"正在同步 = {result.get('title')}，共{len(episodes)}个Episode，当前是第{index+1}个"
         )
@@ -358,11 +385,125 @@ def get_profile():
     if resp.ok:
         return resp.json().get("data").get("uid")
 
+def getTongYiUrl(dir_dict,dir_name,title,url):
+    dir_id = dir_dict.get(dir_name)
+    if dir_id is None:
+        dir_id = create_dir(dir_name)
+        dir_dict[dir_name] = dir_id
+        print(f"创建文件夹${dir_name}成功")
+    if dir_id:
+        task_id = parseNetSourceUrl(url)
+        if task_id:
+            files = queryNetSourceParse(task_id,dir_id,title)
+            if files:
+                id = start(dir_id,files)
+                return f"https://tongyi.aliyun.com/efficiency/doc/transcripts/{id}"
 
-if __name__ == "__main__":
-    notion_helper = NotionHelper()
+@retry(stop_max_attempt_number=3, wait_fixed=5000)
+def create_dir(name):
+    """创建文件夹，支持创建重名文件夹"""
+    payload = {"dirName": name, "parentIdStr": -1}
+    url = "https://qianwen.biz.aliyun.com/assistant/api/record/dir/add?c=tongyi-web"
+    r = requests.post(url, headers=tongyi_headers, json=payload)
+    if r.ok:
+        return r.json().get("data").get("focusDir").get("idStr")
+
+def parseNetSourceUrl(url):
+    print("start parse url")
+    payload = {"action": "parseNetSourceUrl", "version": "1.0", "url": url}
+    url = (
+        "https://tw-efficiency.biz.aliyun.com/api/trans/parseNetSourceUrl?c=tongyi-web"
+    )
+    r = requests.post(url, headers=tongyi_headers, json=payload)
+    if r.ok:
+        data = r.json()
+        success = data.get("success")
+        print(f"parse url success {success}")
+        if success:
+            return data.get("data").get("taskId")
+    
+@retry(stop_max_attempt_number=3, wait_fixed=5000)
+def queryNetSourceParse(task_id, dir_id,title):
+    payload = {"action": "queryNetSourceParse", "version": "1.0", "taskId": task_id}
+    url = "https://tw-efficiency.biz.aliyun.com/api/trans/queryNetSourceParse?c=tongyi-web"
+    response = requests.post(url, headers=tongyi_headers, json=payload)
+    results = []
+    if response.ok:
+        data = response.json().get("data")
+        status = data.get("status")
+        print(f"query source status {status}")
+        if status == 0:
+            urls = data.get("urls")
+            for url in urls:
+                results.append(
+                    {
+                        "fileId": url.get("fileId"),
+                        "dirId": dir_id,
+                        "fileSize": url.get("size"),
+                        "tag": {
+                            "fileType": "net_source",
+                            "showName": title,
+                            "lang": "cn",
+                            "roleSplitNum": 0,
+                            "translateSwitch": 0,
+                            "transTargetValue": 0,
+                            "client": "web",
+                            "originalTag": "",
+                        },
+                    }
+                )
+            return results
+        elif status == -1:
+            time.sleep(1)
+            return queryNetSourceParse(
+                task_id=task_id, dir_id=dir_id,title=title
+            )
+        else:
+            print(f"query source data = {data}")
+            return None
+        
+
+@retry(stop_max_attempt_number=3, wait_fixed=5000)
+def start(dir_id, files):
+    payload = {
+        "dirIdStr": dir_id,
+        "files": files,
+        "taskType": "net_source",
+        "bizTerminal": "web",
+    }
+    url = "https://qianwen.biz.aliyun.com/assistant/api/record/blog/start?c=tongyi-web"
+    r = requests.post(url, headers=tongyi_headers, json=payload)
+    if r.ok :
+        data = r.json()
+        success = data.get("success")
+        if success:
+            genRecordIdList = data.get("data").get("genRecordIdList")
+            if len(genRecordIdList)==1:
+                return genRecordIdList[0]
+            
+@retry(stop_max_attempt_number=3, wait_fixed=5000)
+def get_dir():
+    """获取文件夹"""
+    url = (
+        "https://qianwen.biz.aliyun.com/assistant/api/record/dir/list/get?c=tongyi-web"
+    )
+    response = requests.post(url, headers=tongyi_headers)
+    if response.ok:
+        r = response.json()
+        success = r.get("success")
+        errorMsg = r.get("errorMsg")
+        if success:
+            return {x.get("dir").get("dirName"): x.get("dir").get("idStr") for x in r.get("data")}
+        else:
+            print(f"请求失败：{errorMsg}")
+    else:
+        print("请求失败：", response.status_code)
+
+
+def main():
     refresh_token()
-    d = insert_podcast()
+    dir_dict = get_dir()
+    d = insert_podcast(dir_dict)
     episodes = get_history()
     eids = [x.get("eid") for x in episodes]
     progress = get_progress(eids)
@@ -371,5 +512,10 @@ if __name__ == "__main__":
         if episode["eid"] in progress:
             episode["progress"] = progress.get(episode["eid"]).get("progress")
             episode["playedAt"] = progress.get(episode["eid"]).get("playedAt")
-    insert_episode(episodes, d)
+    insert_episode(episodes, d,dir_dict)
     update_month_data()
+
+notion_helper = NotionHelper()
+
+if __name__ == "__main__":
+    main()

@@ -3,7 +3,7 @@ name: podcast sync
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 16 * * *"
+    - cron: "0 */3 * * *"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -15,6 +15,7 @@ jobs:
         NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         NOTION_PAGE: ${{ secrets.NOTION_PAGE }}
         REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+        COOKIE: ${{ secrets.TONGYI_COOKIE }}
         YEAR: ${{ vars.YEAR }}
         REF: ${{ github.ref }}
         REPOSITORY: ${{ github.repository }}
@@ -32,7 +33,7 @@ jobs:
           pip install -r requirements.txt
       - name: podcast sync
         run: |
-          python -u scripts/podcast.py
+          podcast
       - name: Set default year if not provided
         run: echo "YEAR=$(date +"%Y")" >> $GITHUB_ENV
         if: env.YEAR == ''
@@ -56,4 +57,4 @@ jobs:
           git push || echo "nothing to push"
       - name: udpate heatmap 
         run: |
-            python -u scripts/update_heatmap.py
+            update_heatmap

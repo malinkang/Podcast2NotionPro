@@ -16,6 +16,7 @@ book_properties_type_dict = {
     "音频": RICH_TEXT,
     "Eid": RICH_TEXT,
     "链接": URL,
+    "通义链接": URL,
     "发布时间": DATE,
     "时长": NUMBER,
     "时间戳": NUMBER,
@@ -39,5 +40,5 @@ movie_properties_type_dict = {
     "最后更新时间": DATE,
     "链接": URL,
     "收听时长": NUMBER,
-    "rss": URL,
+    "通义链接": URL,
 }

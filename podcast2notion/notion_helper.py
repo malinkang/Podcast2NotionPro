@@ -7,9 +7,9 @@ from notion_client import Client
 from retrying import retry
 from datetime import timedelta
 from dotenv import load_dotenv
-import utils
+from podcast2notion import utils
 load_dotenv()
-from utils import (
+from podcast2notion.utils import (
     format_date,
     get_date,
     get_first_and_last_day_of_month,
@@ -81,7 +81,24 @@ class NotionHelper:
         )
         if self.day_database_id:
             self.write_database_id(self.day_database_id)
-
+        if self.podcast_database_id:
+            self.update_database(self.podcast_database_id)
+        if self.episode_database_id:
+            self.update_database(self.episode_database_id)
+    @retry(stop_max_attempt_number=3, wait_fixed=5000)
+    def update_database(self,database_id):
+        """更新数据库"""
+        response = self.client.databases.retrieve(database_id=database_id)
+        id = response.get("id")
+        properties = response.get("properties")
+        update_properties = {}
+        if (
+            properties.get("通义链接") is None
+            or properties.get("通义链接").get("type") != "url"
+        ):
+            update_properties["通义链接"] = {"url": {}}
+        if len(update_properties) > 0:
+            self.client.databases.update(database_id=id, properties=update_properties)
     def get_relation_database_id(self, property):
         return property.get("relation").get("database_id")
 
@@ -222,7 +239,7 @@ class NotionHelper:
         return self.client.blocks.delete(block_id=block_id)
 
     @retry(stop_max_attempt_number=3, wait_fixed=5000)
-    def query_all_by_filter(self, database_id, filter):
+    def query_all_by_filter(self, database_id, filter,sorts):
         results = []
         has_more = True
         start_cursor = None
@@ -230,6 +247,7 @@ class NotionHelper:
             response = self.client.databases.query(
                 database_id=database_id,
                 filter=filter,
+                sorts=sorts,
                 start_cursor=start_cursor,
                 page_size=100,
             )
@@ -252,7 +270,7 @@ class NotionHelper:
                 "收听时长": utils.get_property_value(
                     result.get("properties").get("收听时长")
                 ),
-                "rss": utils.get_property_value(result.get("properties").get("rss"))
+                "通义链接": utils.get_property_value(result.get("properties").get("通义链接"))
                 
             }
         return podcast_dict
@@ -273,6 +291,12 @@ class NotionHelper:
                 ),          
                 "收听进度": utils.get_property_value(
                     result.get("properties").get("收听进度")
+                ),          
+                "语音转文字状态": utils.get_property_value(
+                    result.get("properties").get("语音转文字状态")
+                ),
+                "通义链接": utils.get_property_value(
+                    result.get("properties").get("通义链接")
                 ),
                 "日期": utils.get_property_value(
                     result.get("properties").get("日期")

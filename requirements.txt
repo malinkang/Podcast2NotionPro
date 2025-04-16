@@ -5,3 +5,4 @@ retrying
 pendulum
 python-dotenv
 emoji
+podcast2notion
